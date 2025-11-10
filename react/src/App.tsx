@@ -380,7 +380,11 @@ function App() {
                   <div className="bg-white/5 backdrop-blur-xl p-2.5 rounded-xl border border-blue-400/20 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/20 hover:scale-105 transition-all duration-300 cursor-pointer">
                     <p className="text-xs font-medium text-gray-200 mb-1">Error Final</p>
                     <p className="text-base font-bold text-white">
-                      {formatError(result.finalError)}
+                      {formatError(result.finalError, {
+                        precisionMode,
+                        decimals,
+                        significantFigures
+                      })}
                     </p>
                   </div>
                   
@@ -455,7 +459,11 @@ function App() {
                                 <td className="px-2 py-1 text-gray-300">{iter.n}</td>
                                 <td className="px-2 py-1 text-gray-300">{formatNumber(iter.xn)}</td>
                                 <td className="px-2 py-1 text-gray-300">{formatNumber(iter.gxn)}</td>
-                                <td className="px-2 py-1 text-gray-300">{formatError(iter.error)}</td>
+                                <td className="px-2 py-1 text-gray-300">{formatError(iter.error, {
+                                  precisionMode,
+                                  decimals,
+                                  significantFigures
+                                })}</td>
                                 {useAitken && (
                                   <td className="px-2 py-1 text-gray-300">
                                     {iter.aitkenValue !== undefined ? formatNumber(iter.aitkenValue) : '-'}

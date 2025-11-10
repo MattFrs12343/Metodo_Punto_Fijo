@@ -49,19 +49,18 @@ export function formatNumber(value: number, options: FormattingOptions): string 
 /**
  * Format error values for display
  * 
- * Uses scientific notation for very small or very large values
- * to maintain readability.
+ * Respects user's precision settings (decimals or significant figures).
  * 
  * @param error - Error value to format
+ * @param options - Formatting options (precision mode, decimals, significant figures)
  * @returns Formatted error string
  * 
  * @example
- * formatError(0.000001)  // Returns "1.00e-6"
- * formatError(0.123456)  // Returns "0.123456"
- * formatError(1234.5)    // Returns "1.23e+3"
- * formatError(NaN)       // Returns "–" (for initial iteration)
+ * formatError(0.000001, { precisionMode: 'decimals', decimals: 6 })  // Returns "0.000001"
+ * formatError(0.123456, { precisionMode: 'significant', significantFigures: 4 })  // Returns "0.1235"
+ * formatError(NaN, { precisionMode: 'decimals', decimals: 6 })  // Returns "–" (for initial iteration)
  */
-export function formatError(error: number): string {
+export function formatError(error: number, options: FormattingOptions): string {
   // For initial iteration (n=0), error is NaN
   if (isNaN(error)) {
     return '–';
@@ -71,13 +70,8 @@ export function formatError(error: number): string {
     return 'N/A';
   }
   
-  // Use scientific notation for very small or very large values
-  if (error < 0.001 || error > 1000) {
-    return error.toExponential(2);
-  }
-  
-  // Otherwise use fixed decimal notation
-  return error.toFixed(6);
+  // Use the same formatting as other columns
+  return formatNumber(error, options);
 }
 
 /**
