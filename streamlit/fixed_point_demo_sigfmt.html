@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualización Avanzada - Método de Punto Fijo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .visualization-section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        canvas {
+            display: block;
+            margin: 20px auto;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: white;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .info-card h3 {
+            color: #667eea;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .info-card p {
+            color: #333;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .formula {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        .color-blue { background: #3b82f6; }
+        .color-gray { background: #9ca3af; }
+        .color-red { background: #ef4444; }
+        .color-green { background: #10b981; }
+
+        .interactive-note {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .interactive-note h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .interactive-note p {
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            canvas {
+                max-width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Visualización Avanzada</h1>
+            <p>Método de Iteración de Punto Fijo</p>
+        </div>
+
+        <div class="content">
+            <div class="visualization-section">
+                <h2 class="section-title">📊 Gráfico Cobweb Interactivo</h2>
+                
+                <canvas id="cobwebCanvas" width="800" height="800"></canvas>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color color-blue"></div>
+                        <span>Función g(x)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color color-gray"></div>
+                        <span>Línea y = x</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color color-red"></div>
+                        <span>Iteraciones</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color color-green"></div>
+                        <span>Punto inicial</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="formula">
+                <strong>Fórmula del Método:</strong> xₙ₊₁ = g(xₙ)
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>🎯 Convergencia</h3>
+                    <p>El método converge cuando |g'(x*)| < 1 en el punto fijo x*. El gráfico cobweb muestra visualmente este comportamiento.</p>
+                </div>
+
+                <div class="info-card">
+                    <h3>🔄 Iteración</h3>
+                    <p>Cada paso del método se visualiza como un movimiento vertical hacia g(x) y luego horizontal hacia la línea y = x.</p>
+                </div>
+
+                <div class="info-card">
+                    <h3>📈 Interpretación</h3>
+                    <p>Si las líneas se acercan a un punto, el método converge. Si se alejan, diverge. El patrón forma una "telaraña".</p>
+                </div>
+
+                <div class="info-card">
+                    <h3>⚡ Aceleración</h3>
+                    <p>El método de Aitken (Δ²) puede acelerar la convergencia usando tres iteraciones consecutivas para estimar mejor el límite.</p>
+                </div>
+            </div>
+
+            <div class="interactive-note">
+                <h3>💡 Nota Interactiva</h3>
+                <p>Esta visualización muestra el comportamiento geométrico del método de punto fijo. 
+                   El gráfico cobweb es una herramienta poderosa para entender la convergencia y divergencia 
+                   de métodos iterativos. Prueba diferentes funciones en la aplicación principal para ver 
+                   cómo cambia el patrón.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Demo visualization with example function g(x) = cos(x)
+        const canvas = document.getElementById('cobwebCanvas');
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // Example: g(x) = cos(x), x0 = 0.5
+        function g(x) {
+            return Math.cos(x);
+        }
+
+        // Generate iterations
+        function generateIterations(x0, numIter) {
+            const iterations = [];
+            let x = x0;
+            
+            for (let i = 0; i < numIter; i++) {
+                const gx = g(x);
+                iterations.push({ x, gx });
+                x = gx;
+            }
+            
+            return iterations;
+        }
+
+        // Draw the cobweb plot
+        function drawCobweb() {
+            const margin = 60;
+            const plotWidth = width - 2 * margin;
+            const plotHeight = height - 2 * margin;
+
+            // Range
+            const xMin = -0.5;
+            const xMax = 2.0;
+            const yMin = -0.5;
+            const yMax = 2.0;
+            const rangeX = xMax - xMin;
+            const rangeY = yMax - yMin;
+
+            // Coordinate transformation
+            const toCanvasX = (x) => margin + ((x - xMin) / rangeX) * plotWidth;
+            const toCanvasY = (y) => height - margin - ((y - yMin) / rangeY) * plotHeight;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw grid
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 1;
+            
+            for (let i = 0; i <= 10; i++) {
+                const x = xMin + (rangeX * i) / 10;
+                const y = yMin + (rangeY * i) / 10;
+                
+                // Vertical lines
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(x), margin);
+                ctx.lineTo(toCanvasX(x), height - margin);
+                ctx.stroke();
+                
+                // Horizontal lines
+                ctx.beginPath();
+                ctx.moveTo(margin, toCanvasY(y));
+                ctx.lineTo(width - margin, toCanvasY(y));
+                ctx.stroke();
+            }
+
+            // Draw axes
+            ctx.strokeStyle = '#374151';
+            ctx.lineWidth = 2;
+            
+            // X-axis
+            ctx.beginPath();
+            ctx.moveTo(margin, toCanvasY(0));
+            ctx.lineTo(width - margin, toCanvasY(0));
+            ctx.stroke();
+            
+            // Y-axis
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(0), margin);
+            ctx.lineTo(toCanvasX(0), height - margin);
+            ctx.stroke();
+
+            // Draw y = x line
+            ctx.strokeStyle = '#9ca3af';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 5]);
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(xMin), toCanvasY(xMin));
+            ctx.lineTo(toCanvasX(xMax), toCanvasY(xMax));
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw g(x) function
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            const numPoints = 300;
+            for (let i = 0; i <= numPoints; i++) {
+                const x = xMin + (rangeX * i) / numPoints;
+                const y = g(x);
+                
+                const canvasX = toCanvasX(x);
+                const canvasY = toCanvasY(y);
+                
+                if (i === 0) {
+                    ctx.moveTo(canvasX, canvasY);
+                } else {
+                    ctx.lineTo(canvasX, canvasY);
+                }
+            }
+            ctx.stroke();
+
+            // Generate and draw iterations
+            const iterations = generateIterations(0.5, 15);
+            
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 2;
+            
+            for (let i = 0; i < iterations.length - 1; i++) {
+                const curr = iterations[i];
+                const next = iterations[i + 1];
+                
+                // Vertical line
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(curr.x), toCanvasY(curr.x));
+                ctx.lineTo(toCanvasX(curr.x), toCanvasY(curr.gx));
+                ctx.stroke();
+                
+                // Horizontal line
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(curr.x), toCanvasY(curr.gx));
+                ctx.lineTo(toCanvasX(curr.gx), toCanvasY(curr.gx));
+                ctx.stroke();
+            }
+
+            // Draw starting point
+            ctx.fillStyle = '#10b981';
+            ctx.beginPath();
+            ctx.arc(toCanvasX(0.5), toCanvasY(0.5), 8, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Draw final point
+            const finalIter = iterations[iterations.length - 1];
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(toCanvasX(finalIter.x), toCanvasY(finalIter.x), 8, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Draw labels
+            ctx.fillStyle = '#374151';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'center';
+            
+            // Axis labels
+            ctx.fillText('x', width - margin + 30, toCanvasY(0) + 5);
+            ctx.save();
+            ctx.translate(toCanvasX(0) - 30, margin - 20);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('y', 0, 0);
+            ctx.restore();
+
+            // Title
+            ctx.font = 'bold 20px sans-serif';
+            ctx.fillStyle = '#667eea';
+            ctx.fillText('Ejemplo: g(x) = cos(x), x₀ = 0.5', width / 2, 30);
+
+            // Tick marks and values
+            ctx.font = '12px sans-serif';
+            ctx.fillStyle = '#666';
+            
+            for (let i = 0; i <= 5; i++) {
+                const x = xMin + (rangeX * i) / 5;
+                const y = yMin + (rangeY * i) / 5;
+                
+                // X-axis ticks
+                ctx.fillText(x.toFixed(1), toCanvasX(x), toCanvasY(0) + 20);
+                
+                // Y-axis ticks
+                ctx.textAlign = 'right';
+                ctx.fillText(y.toFixed(1), toCanvasX(0) - 10, toCanvasY(y) + 5);
+                ctx.textAlign = 'center';
+            }
+        }
+
+        // Draw on load
+        drawCobweb();
+
+        // Redraw on resize
+        window.addEventListener('resize', () => {
+            drawCobweb();
+        });
+    </script>
+</body>
+</html>
