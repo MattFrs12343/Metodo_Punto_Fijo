@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { fixedPointIteration, FixedPointResult } from './lib/fixedPoint';
 import CobwebCanvas from './components/CobwebCanvas';
+import StepByStepView from './components/StepByStepView';
+import { useMathJax } from './hooks/useMathJax';
 import { getUnitSymbol, formatNumber as formatNumberUtil, formatError, formatValueWithUnit } from './lib/formatter';
 
 function App() {
@@ -19,6 +21,10 @@ function App() {
   const [result, setResult] = useState<FixedPointResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [showStepByStep, setShowStepByStep] = useState(false);
+  
+  // Load MathJax
+  const { isLoaded: mathJaxLoaded, error: mathJaxError } = useMathJax();
 
   // Format numbers for display only (never for calculations)
   // This function applies formatting at render time only
@@ -48,6 +54,7 @@ function App() {
       });
       
       setResult(calculationResult);
+      setShowStepByStep(true); // Mostrar automáticamente los pasos
       setIsCalculating(false);
     }, 10);
   };
@@ -332,12 +339,21 @@ function App() {
                   </button>
 
                   {result && (
-                    <button
-                      onClick={handleNewAnalysis}
-                      className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-2 px-4 rounded-lg hover:from-emerald-500 hover:to-teal-500 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-emerald-500/50 font-medium text-sm"
-                    >
-                      ✨ Nuevo Análisis
-                    </button>
+                    <>
+                      <button
+                        onClick={handleNewAnalysis}
+                        className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-2 px-4 rounded-lg hover:from-emerald-500 hover:to-teal-500 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-emerald-500/50 font-medium text-sm"
+                      >
+                        ✨ Nuevo Análisis
+                      </button>
+
+                      <button
+                        onClick={() => setShowStepByStep(!showStepByStep)}
+                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2 px-4 rounded-lg hover:from-blue-500 hover:to-indigo-500 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-blue-500/50 font-medium text-sm"
+                      >
+                        {showStepByStep ? '📊 Ver Gráficos' : '📚 Ver Pasos'}
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -413,70 +429,105 @@ function App() {
                 )}
 
                 {/* Main Content Area */}
-                <div className="flex-1 grid grid-cols-2 gap-3 min-h-0">
-                  {/* Cobweb Plot */}
-                  {result.success && result.iterations.length > 0 && (
-                    <div className="bg-white/5 backdrop-blur-xl rounded-xl shadow-2xl p-3 border border-indigo-400/20 hover:border-indigo-400/40 hover:shadow-indigo-500/20 transition-all duration-300 hover:scale-[1.01] flex flex-col">
-                      <h2 className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 mb-2">📈 Gráfico Cobweb</h2>
-                      <div className="flex-1 flex items-center justify-center min-h-0">
-                        <CobwebCanvas 
-                          gFunction={gFunction}
-                          iterations={result.iterations}
-                          angleUnit={result.angleUnit}
-                          width={450}
-                          height={450}
-                        />
-                      </div>
-                    </div>
-                  )}
+                {showStepByStep ? (
+                  /* Full Screen Step-by-Step View */
+                  <div className="flex-1 min-h-0">
+                    {mathJaxLoaded && (
+                      <StepByStepView
+                        originalFunction={`${gFunction} - x`} // Convert g(x) to f(x) = g(x) - x = 0
+                        gFunction={gFunction}
+                        result={result}
+                        tolerance={tolerance}
+                        stopCriterion={stopCriterion}
+                        onClose={() => setShowStepByStep(false)}
+                      />
+                    )}
 
-                  {/* Iterations Table */}
-                  {result.iterations.length > 0 && (
-                    <div className="bg-white/5 backdrop-blur-xl rounded-xl shadow-2xl p-3 border border-cyan-400/20 hover:border-cyan-400/40 hover:shadow-cyan-500/20 transition-all duration-300 hover:scale-[1.01] flex flex-col min-h-0">
-                      <h2 className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 mb-2">📊 Iteraciones</h2>
-                      <div className="flex-1 overflow-auto min-h-0">
-                        <table className="w-full text-xs">
-                          <thead className="bg-white/5 sticky top-0">
-                            <tr>
-                              <th className="px-2 py-1.5 text-left font-medium text-gray-200">n</th>
-                              <th className="px-2 py-1.5 text-left font-medium text-gray-200">
-                                xₙ ({getUnitSymbol(result.angleUnit)})
-                              </th>
-                              <th className="px-2 py-1.5 text-left font-medium text-gray-200">
-                                g(xₙ) ({getUnitSymbol(result.angleUnit)})
-                              </th>
-                              <th className="px-2 py-1.5 text-left font-medium text-gray-200">Error</th>
-                              {useAitken && (
+                    {/* MathJax Loading Error */}
+                    {mathJaxError && (
+                      <div className="bg-red-500/20 border border-red-400/50 backdrop-blur-md p-3 rounded-xl">
+                        <p className="text-red-200 text-sm">
+                          ❌ Error cargando MathJax: {mathJaxError}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* MathJax Loading */}
+                    {!mathJaxLoaded && !mathJaxError && (
+                      <div className="bg-blue-500/20 border border-blue-400/50 backdrop-blur-md p-3 rounded-xl">
+                        <p className="text-blue-200 text-sm">
+                          ⏳ Cargando renderizador matemático...
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Normal View - Cobweb and Table side by side */
+                  <div className="flex-1 grid grid-cols-2 gap-3 min-h-0">
+                    {/* Cobweb Plot */}
+                    {result.success && result.iterations.length > 0 && (
+                      <div className="bg-white/5 backdrop-blur-xl rounded-xl shadow-2xl p-3 border border-indigo-400/20 hover:border-indigo-400/40 hover:shadow-indigo-500/20 transition-all duration-300 hover:scale-[1.01] flex flex-col">
+                        <h2 className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 mb-2">📈 Gráfico Cobweb</h2>
+                        <div className="flex-1 flex items-center justify-center min-h-0">
+                          <CobwebCanvas 
+                            gFunction={gFunction}
+                            iterations={result.iterations}
+                            angleUnit={result.angleUnit}
+                            width={450}
+                            height={450}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Iterations Table */}
+                    {result.iterations.length > 0 && (
+                      <div className="bg-white/5 backdrop-blur-xl rounded-xl shadow-2xl p-3 border border-cyan-400/20 hover:border-cyan-400/40 hover:shadow-cyan-500/20 transition-all duration-300 hover:scale-[1.01] flex flex-col min-h-0">
+                        <h2 className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 mb-2">📊 Iteraciones</h2>
+                        <div className="flex-1 overflow-auto min-h-0">
+                          <table className="w-full text-xs">
+                            <thead className="bg-white/5 sticky top-0">
+                              <tr>
+                                <th className="px-2 py-1.5 text-left font-medium text-gray-200">n</th>
                                 <th className="px-2 py-1.5 text-left font-medium text-gray-200">
-                                  Aitken ({getUnitSymbol(result.angleUnit)})
+                                  xₙ ({getUnitSymbol(result.angleUnit)})
                                 </th>
-                              )}
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-white/10">
-                            {result.iterations.map((iter) => (
-                              <tr key={iter.n} className="hover:bg-white/5 hover:bg-gradient-to-r hover:from-indigo-500/10 hover:to-transparent transition-all duration-200">
-                                <td className="px-2 py-1 text-gray-300">{iter.n}</td>
-                                <td className="px-2 py-1 text-gray-300">{formatNumber(iter.xn)}</td>
-                                <td className="px-2 py-1 text-gray-300">{formatNumber(iter.gxn)}</td>
-                                <td className="px-2 py-1 text-gray-300">{formatError(iter.error, {
-                                  precisionMode,
-                                  decimals,
-                                  significantFigures
-                                })}</td>
+                                <th className="px-2 py-1.5 text-left font-medium text-gray-200">
+                                  g(xₙ) ({getUnitSymbol(result.angleUnit)})
+                                </th>
+                                <th className="px-2 py-1.5 text-left font-medium text-gray-200">Error</th>
                                 {useAitken && (
-                                  <td className="px-2 py-1 text-gray-300">
-                                    {iter.aitkenValue !== undefined ? formatNumber(iter.aitkenValue) : '-'}
-                                  </td>
+                                  <th className="px-2 py-1.5 text-left font-medium text-gray-200">
+                                    Aitken ({getUnitSymbol(result.angleUnit)})
+                                  </th>
                                 )}
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody className="divide-y divide-white/10">
+                              {result.iterations.map((iter) => (
+                                <tr key={iter.n} className="hover:bg-white/5 hover:bg-gradient-to-r hover:from-indigo-500/10 hover:to-transparent transition-all duration-200">
+                                  <td className="px-2 py-1 text-gray-300">{iter.n}</td>
+                                  <td className="px-2 py-1 text-gray-300">{formatNumber(iter.xn)}</td>
+                                  <td className="px-2 py-1 text-gray-300">{formatNumber(iter.gxn)}</td>
+                                  <td className="px-2 py-1 text-gray-300">{formatError(iter.error, {
+                                    precisionMode,
+                                    decimals,
+                                    significantFigures
+                                  })}</td>
+                                  {useAitken && (
+                                    <td className="px-2 py-1 text-gray-300">
+                                      {iter.aitkenValue !== undefined ? formatNumber(iter.aitkenValue) : '-'}
+                                    </td>
+                                  )}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
 

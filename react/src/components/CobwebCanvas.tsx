@@ -23,8 +23,9 @@ const CobwebCanvas = ({ gFunction, iterations, angleUnit = 'radians', width = 60
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
+    // Clear canvas with dark background
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.95)'; // slate-900 with transparency
+    ctx.fillRect(0, 0, width, height);
 
     try {
       // Compile function
@@ -54,7 +55,7 @@ const CobwebCanvas = ({ gFunction, iterations, angleUnit = 'radians', width = 60
       const rangeY = rangeX;
 
       // Margins
-      const margin = 50;
+      const margin = 60;
       const plotWidth = width - 2 * margin;
       const plotHeight = height - 2 * margin;
 
@@ -62,15 +63,15 @@ const CobwebCanvas = ({ gFunction, iterations, angleUnit = 'radians', width = 60
       const toCanvasX = (x: number) => margin + ((x - xMin) / rangeX) * plotWidth;
       const toCanvasY = (y: number) => height - margin - ((y - yMin) / rangeY) * plotHeight;
 
-      // Draw background gradient
-      const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, 'rgba(99, 102, 241, 0.03)');
-      gradient.addColorStop(1, 'rgba(168, 85, 247, 0.03)');
-      ctx.fillStyle = gradient;
+      // Draw subtle background gradient for plot area
+      const bgGradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, Math.max(width, height)/2);
+      bgGradient.addColorStop(0, 'rgba(30, 41, 59, 0.4)'); // slate-800
+      bgGradient.addColorStop(1, 'rgba(15, 23, 42, 0.8)'); // slate-900
+      ctx.fillStyle = bgGradient;
       ctx.fillRect(margin, margin, plotWidth, plotHeight);
 
-      // Draw grid with subtle style
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      // Draw elegant grid
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.15)'; // slate-400 with low opacity
       ctx.lineWidth = 0.5;
       
       // Vertical grid lines
@@ -93,11 +94,11 @@ const CobwebCanvas = ({ gFunction, iterations, angleUnit = 'radians', width = 60
         ctx.stroke();
       }
 
-      // Draw axes with glow effect
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.lineWidth = 2;
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = 'rgba(99, 102, 241, 0.5)';
+      // Draw main axes with subtle glow
+      ctx.strokeStyle = 'rgba(226, 232, 240, 0.6)'; // slate-200
+      ctx.lineWidth = 1.5;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = 'rgba(59, 130, 246, 0.3)'; // blue glow
       
       // X-axis
       const yAxisPos = toCanvasY(0);
@@ -119,15 +120,12 @@ const CobwebCanvas = ({ gFunction, iterations, angleUnit = 'radians', width = 60
       
       ctx.shadowBlur = 0;
 
-      // Draw y = x line with gradient
-      const lineGradient = ctx.createLinearGradient(toCanvasX(xMin), toCanvasY(xMin), toCanvasX(xMax), toCanvasY(xMax));
-      lineGradient.addColorStop(0, 'rgba(168, 85, 247, 0.6)');
-      lineGradient.addColorStop(1, 'rgba(236, 72, 153, 0.6)');
-      ctx.strokeStyle = lineGradient;
-      ctx.lineWidth = 2.5;
-      ctx.setLineDash([8, 4]);
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = 'rgba(168, 85, 247, 0.4)';
+      // Draw y = x line (identity line) - tenue y punteada
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.7)'; // slate-400
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
+      ctx.shadowBlur = 4;
+      ctx.shadowColor = 'rgba(148, 163, 184, 0.3)';
       ctx.beginPath();
       ctx.moveTo(toCanvasX(xMin), toCanvasY(xMin));
       ctx.lineTo(toCanvasX(xMax), toCanvasY(xMax));
@@ -135,19 +133,19 @@ const CobwebCanvas = ({ gFunction, iterations, angleUnit = 'radians', width = 60
       ctx.setLineDash([]);
       ctx.shadowBlur = 0;
 
-      // Draw g(x) function with gradient and glow
+      // Draw g(x) function - línea limpia, color frío (cyan/azul)
       const funcGradient = ctx.createLinearGradient(margin, margin, width - margin, height - margin);
-      funcGradient.addColorStop(0, 'rgba(59, 130, 246, 1)');
-      funcGradient.addColorStop(0.5, 'rgba(99, 102, 241, 1)');
-      funcGradient.addColorStop(1, 'rgba(139, 92, 246, 1)');
+      funcGradient.addColorStop(0, 'rgba(34, 211, 238, 1)'); // cyan-400
+      funcGradient.addColorStop(0.5, 'rgba(59, 130, 246, 1)'); // blue-500
+      funcGradient.addColorStop(1, 'rgba(99, 102, 241, 1)'); // indigo-500
       ctx.strokeStyle = funcGradient;
       ctx.lineWidth = 3;
       ctx.shadowBlur = 12;
-      ctx.shadowColor = 'rgba(99, 102, 241, 0.6)';
+      ctx.shadowColor = 'rgba(59, 130, 246, 0.5)';
       ctx.beginPath();
       
       let firstPoint = true;
-      const numPoints = 200;
+      const numPoints = 300; // Más puntos para mayor precisión visual
       for (let i = 0; i <= numPoints; i++) {
         const x = xMin + (rangeX * i) / numPoints;
         const y = g(x);
@@ -169,20 +167,34 @@ const CobwebCanvas = ({ gFunction, iterations, angleUnit = 'radians', width = 60
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // Draw cobweb pattern with gradient colors
+      // Draw cobweb pattern - iteraciones progresivas con énfasis visual
       for (let i = 0; i < iterations.length - 1; i++) {
         const x1 = iterations[i].xn;
         const x2 = iterations[i + 1].xn;
         
-        // Color gradient from red to orange based on iteration
-        const progress = i / (iterations.length - 1);
-        const r = Math.floor(239 - progress * 50);
-        const g = Math.floor(68 + progress * 100);
-        const b = Math.floor(68 + progress * 50);
+        // Progresión de color elegante: de cyan a naranja
+        const progress = i / Math.max(iterations.length - 2, 1);
+        const alpha = 0.6 + progress * 0.4; // Aumenta opacidad hacia el final
         
-        ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.7 + progress * 0.3})`;
-        ctx.lineWidth = 2;
-        ctx.shadowBlur = 6;
+        // Colores progresivos: cyan → violet → orange
+        let r, g, b;
+        if (progress < 0.5) {
+          // cyan to violet
+          const t = progress * 2;
+          r = Math.floor(34 + t * (139 - 34));   // cyan-400 to violet-500
+          g = Math.floor(211 + t * (92 - 211));
+          b = Math.floor(238 + t * (246 - 238));
+        } else {
+          // violet to orange
+          const t = (progress - 0.5) * 2;
+          r = Math.floor(139 + t * (249 - 139)); // violet-500 to orange-400
+          g = Math.floor(92 + t * (115 - 92));
+          b = Math.floor(246 + t * (22 - 246));
+        }
+        
+        ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        ctx.lineWidth = 1.5 + progress * 1; // Líneas más gruesas hacia el final
+        ctx.shadowBlur = 4 + progress * 4;
         ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.4)`;
         
         // Vertical line from (x1, x1) to (x1, g(x1))
@@ -200,88 +212,106 @@ const CobwebCanvas = ({ gFunction, iterations, angleUnit = 'radians', width = 60
       
       ctx.shadowBlur = 0;
 
-      // Draw starting point with glow
+      // Draw starting point - punto inicial destacado
       const x0 = iterations[0].xn;
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = 'rgba(16, 185, 129, 0.8)';
-      ctx.fillStyle = '#10b981';
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = 'rgba(16, 185, 129, 0.8)'; // emerald-500
+      ctx.fillStyle = 'rgba(16, 185, 129, 1)';
       ctx.beginPath();
-      ctx.arc(toCanvasX(x0), toCanvasY(x0), 7, 0, 2 * Math.PI);
+      ctx.arc(toCanvasX(x0), toCanvasY(x0), 6, 0, 2 * Math.PI);
       ctx.fill();
       
-      // Draw outer ring for starting point
-      ctx.strokeStyle = '#10b981';
+      // Outer ring for starting point
+      ctx.strokeStyle = 'rgba(16, 185, 129, 0.8)';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(toCanvasX(x0), toCanvasY(x0), 10, 0, 2 * Math.PI);
+      ctx.arc(toCanvasX(x0), toCanvasY(x0), 12, 0, 2 * Math.PI);
       ctx.stroke();
 
-      // Draw final point with glow
+      // Draw final point - último punto con glow sutil comunicando "convergencia"
       const xFinal = iterations[iterations.length - 1].xn;
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = 'rgba(239, 68, 68, 0.8)';
-      ctx.fillStyle = '#ef4444';
+      ctx.shadowBlur = 25;
+      ctx.shadowColor = 'rgba(249, 115, 22, 0.9)'; // orange-500
+      ctx.fillStyle = 'rgba(249, 115, 22, 1)';
       ctx.beginPath();
       ctx.arc(toCanvasX(xFinal), toCanvasY(xFinal), 7, 0, 2 * Math.PI);
       ctx.fill();
       
-      // Draw outer ring for final point
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 2;
+      // Pulsing outer ring for convergence
+      ctx.strokeStyle = 'rgba(249, 115, 22, 0.6)';
+      ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.arc(toCanvasX(xFinal), toCanvasY(xFinal), 10, 0, 2 * Math.PI);
+      ctx.arc(toCanvasX(xFinal), toCanvasY(xFinal), 14, 0, 2 * Math.PI);
       ctx.stroke();
       
       ctx.shadowBlur = 0;
 
-      // Draw labels with unit symbols
-      ctx.fillStyle = '#374151';
-      ctx.font = '12px sans-serif';
+      // Draw elegant labels - tipografía pequeña y elegante
+      ctx.fillStyle = 'rgba(226, 232, 240, 0.8)'; // slate-200
+      ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
       ctx.textAlign = 'center';
       
       // X-axis label with unit
-      ctx.fillText(`x (${unitSymbol})`, width - margin + 20, toCanvasY(0) + 5);
+      ctx.fillText(`x (${unitSymbol})`, width - margin + 25, toCanvasY(0) + 5);
       
       // Y-axis label with unit
       ctx.save();
-      ctx.translate(toCanvasX(0) - 5, margin - 20);
+      ctx.translate(toCanvasX(0) - 25, margin - 15);
       ctx.rotate(-Math.PI / 2);
       ctx.fillText(`y (${unitSymbol})`, 0, 0);
       ctx.restore();
 
-      // Legend
+      // Elegant legend - ubicación discreta, colores coherentes
       ctx.textAlign = 'left';
-      ctx.font = '14px sans-serif';
+      ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
       
-      ctx.strokeStyle = '#3b82f6';
-      ctx.lineWidth = 2;
+      // Legend background
+      const legendX = margin + 15;
+      const legendY = 15;
+      const legendWidth = 120;
+      const legendHeight = 75;
+      
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.8)'; // slate-800
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+      ctx.lineWidth = 1;
+      ctx.fillRect(legendX - 5, legendY - 5, legendWidth, legendHeight);
+      ctx.strokeRect(legendX - 5, legendY - 5, legendWidth, legendHeight);
+      
+      // g(x) line
+      ctx.strokeStyle = 'rgba(59, 130, 246, 1)'; // blue-500
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.moveTo(margin + 10, 20);
-      ctx.lineTo(margin + 40, 20);
+      ctx.moveTo(legendX, legendY + 10);
+      ctx.lineTo(legendX + 25, legendY + 10);
       ctx.stroke();
-      ctx.fillText('g(x)', margin + 50, 25);
+      ctx.fillStyle = 'rgba(226, 232, 240, 0.9)';
+      ctx.fillText('g(x)', legendX + 30, legendY + 14);
       
-      ctx.strokeStyle = '#9ca3af';
-      ctx.setLineDash([5, 5]);
+      // y = x line
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.7)'; // slate-400
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
       ctx.beginPath();
-      ctx.moveTo(margin + 10, 40);
-      ctx.lineTo(margin + 40, 40);
+      ctx.moveTo(legendX, legendY + 30);
+      ctx.lineTo(legendX + 25, legendY + 30);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillText('y = x', margin + 50, 45);
+      ctx.fillText('y = x', legendX + 30, legendY + 34);
       
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 1.5;
+      // Iterations line
+      ctx.strokeStyle = 'rgba(249, 115, 22, 0.8)'; // orange-500
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(margin + 10, 60);
-      ctx.lineTo(margin + 40, 60);
+      ctx.moveTo(legendX, legendY + 50);
+      ctx.lineTo(legendX + 25, legendY + 50);
       ctx.stroke();
-      ctx.fillText('Iteraciones', margin + 50, 65);
+      ctx.fillText('Iteraciones', legendX + 30, legendY + 54);
 
     } catch (error) {
       console.error('Error drawing cobweb plot:', error);
-      ctx.fillStyle = '#ef4444';
-      ctx.font = '16px sans-serif';
+      // Error message with dark theme
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.9)'; // red-500
+      ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Error al dibujar el gráfico', width / 2, height / 2);
     }
@@ -293,7 +323,10 @@ const CobwebCanvas = ({ gFunction, iterations, angleUnit = 'radians', width = 60
         ref={canvasRef}
         width={width}
         height={height}
-        className="border border-gray-300 rounded-lg"
+        className="rounded-lg border border-slate-600/30 shadow-lg shadow-slate-900/50 backdrop-blur-sm"
+        style={{
+          background: 'transparent'
+        }}
       />
     </div>
   );
